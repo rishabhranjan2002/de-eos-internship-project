@@ -1,0 +1,110 @@
+theory:
+  camb:
+    extra_args:
+      dark_energy_model: ppf
+      num_massive_neutrinos: 1
+      nnu: 3.044
+      theta_H0_range:
+      - 20
+      - 100
+
+likelihood:
+  compressed_cmb:
+    external: |
+      lambda _self: (
+          -0.5 * np.dot(
+              (np.array([
+                  _self.provider.get_param("cosmomc_theta"),
+                  _self.provider.get_param("ombh2"),
+                  _self.provider.get_param("ombh2") + _self.provider.get_param("omch2"),
+              ]) - np.array([0.01041, 0.02223, 0.14208])),
+              np.dot(
+                  np.linalg.inv(
+                      1e-9 * np.array([
+                          [0.006621, 0.12444, -1.1929],
+                          [0.12444, 21.344, -94.001],
+                          [-1.1929, -94.001, 1488.4]
+                      ])
+                  ),
+                  (np.array([
+                      _self.provider.get_param("cosmomc_theta"),
+                      _self.provider.get_param("ombh2"),
+                      _self.provider.get_param("ombh2") + _self.provider.get_param("omch2"),
+                  ]) - np.array([0.01041, 0.02223, 0.14208]))
+              )
+          )
+      )
+    requires: ["cosmomc_theta", "ombh2", "omch2"]
+
+  bao.desi_dr2: null
+
+params:
+  ombh2:
+    prior:
+      min: 0.005
+      max: 0.1
+    ref:
+      dist: norm
+      loc: 0.0222
+      scale: 0.0005
+    proposal: 0.0004
+    latex: \Omega_\mathrm{b} h^2
+  omch2:
+    prior:
+      min: 0.001
+      max: 0.99
+    ref:
+      dist: norm
+      loc: 0.12
+      scale: 0.003
+    proposal: 0.002
+    latex: \Omega_\mathrm{c} h^2
+  omega_bc:
+    derived: "lambda ombh2, omch2: ombh2 + omch2"
+    latex: \Omega_{bc} h^2
+  theta_MC_100:
+    prior:
+      min: 0.5
+      max: 10
+    ref:
+      dist: norm
+      loc: 1.04109
+      scale: 0.0004
+    proposal: 0.0002
+    latex: 100\theta_\mathrm{MC}
+    drop: true
+    renames: theta
+  cosmomc_theta:
+    value: 'lambda theta_MC_100: 1.e-2*theta_MC_100'
+    derived: false
+  H0:
+    latex: H_0
+    min: 20
+    max: 100
+  w:
+    prior:
+      min: -3
+      max: 1
+    ref:
+      dist: norm
+      loc: -0.99
+      scale: 0.02
+    proposal: 0.02
+    latex: w_{0,\mathrm{DE}}
+  wa:
+    prior:
+      min: -3
+      max: 2
+    ref:
+      dist: norm
+      loc: 0
+      scale: 0.05
+    proposal: 0.05
+    latex: w_{a,\mathrm{DE}}
+  mnu: 0.06
+
+sampler:
+  mcmc:
+    proposal_scale: 1.9
+    covmat: auto
+    Rminus1_stop: 0.01
